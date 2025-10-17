@@ -80,8 +80,8 @@ def run_cmd(client: paramiko.SSHClient, cmd: str, sudo: bool, password: str, tim
         if sudo:
             stdin.write(password + "\n")
             stdin.flush()
-        out = stdout.read().decode("utf-8", "ignore")
-        err = stderr.read().decode("utf-8", "ignore")
+        out = stdout.read().decode("ascii", "ignore")
+        #err = stderr.read().decode("utf-8", "ignore")
         rc = stdout.channel.recv_exit_status()
     else:
         shell = client.invoke_shell()
