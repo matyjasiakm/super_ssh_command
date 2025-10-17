@@ -78,7 +78,7 @@ def run_cmd(client: paramiko.SSHClient, cmd: str, sudo: bool, password: str, tim
     if not interactive_mode:
         full_cmd = f"sudo -S -p '' {cmd}" if sudo else cmd
         # get_pty=True aby sudo akceptowało hasło
-        stdin, stdout, stderr = client.exec_command(full_cmd, get_pty=True, timeout=timeout)
+        stdin, stdout, stderr = client.exec_command(full_cmd, timeout=timeout)
         time.sleep(0.2)
         if sudo:
             stdin.write(password + "\n")
