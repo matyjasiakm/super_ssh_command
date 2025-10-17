@@ -57,8 +57,9 @@ def connect_ssh(ip: str, username: str, password: str, port: int, timeout: int) 
     try:
         client.connect(
             ip, port=port, username=username, password=password,
-            allow_agent=False, look_for_keys=False, timeout=timeout, banner_timeout=timeout, auth_timeout=timeout
+             look_for_keys=False, timeout=timeout, banner_timeout=timeout, auth_timeout=timeout
         )
+        #allow_agent=False
         return client, None
     except (paramiko.SSHException, socket.error, socket.timeout) as e:
         return None, f"Połączenie nieudane: {e}"
