@@ -85,6 +85,7 @@ def run_cmd(client: paramiko.SSHClient, cmd: str, sudo: bool, password: str, tim
         rc = stdout.channel.recv_exit_status()
     else:
         shell = client.invoke_shell()
+        rc = 0
         for c in cmd.split(";"):
             shell.send(c + "\n")
             print(f"Sent: {c}")
