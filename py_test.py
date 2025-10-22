@@ -165,7 +165,8 @@ def main():
                 for t in hosts_file:
                     if ip in t:
                         hosts.append(t)
-            hosts.append((ip, args.user, args.password))
+            if args.password is not None:
+                hosts.append((ip, args.user, args.password))
         # sys.exit(2)
     else:
         hosts=hosts_file
