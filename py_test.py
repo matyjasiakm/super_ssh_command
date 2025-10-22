@@ -156,6 +156,9 @@ def main():
         # print("Brak hostów do przetworzenia (sprawdź plik CSV).", file=sys.stderr)
         for ip in args.destination.split(','):
             if args.user is not None:
+                if args.password is not None:
+                    hosts.append(ip, args.user, args.password)
+                    continue
                 for t in hosts_file:
                     if ip in t and args.user:
                         hosts.append(t)
