@@ -76,7 +76,7 @@ def run_cmd(client: paramiko.SSHClient, cmd: str, sudo: bool, password: str, tim
     if not interactive_mode:
         full_cmd = f"sudo -S -p '' {cmd}" if sudo else cmd
         # get_pty=True aby sudo akceptowało hasło
-        stdin, stdout, stderr = client.exec_command(full_cmd, get_pty=True, timeout=timeout)
+        stdin, stdout, stderr = client.exec_command(full_cmd, timeout=timeout)
         time.sleep(0.2)
         if sudo:
             stdin.write(password + "\n")
@@ -85,8 +85,6 @@ def run_cmd(client: paramiko.SSHClient, cmd: str, sudo: bool, password: str, tim
         err = stderr.read().decode("utf-8", "ignore")
         rc = stdout.channel.recv_exit_status()
     else:
-        channel = client.invoke_shell()
-        print(f"Connected to {host}. Sending commands...\n")
         for c in cmd.split(";"):
             channel.send(c + "\n")
             print(f"Sent: {c}")
