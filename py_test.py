@@ -144,9 +144,10 @@ def main():
     hosts_file=[]
 
     try:
-    hosts_file = load_hosts(args.file)  # load_hosts(args.file)
+        hosts_file = load_hosts(args.file)  # load_hosts(args.file)
     except Exception as e:
     print(f"⚠️ Brak pliku hosts.\n{out.strip() if is_verbose else ''}")
+    
     if args.destination is None:
         return
 
