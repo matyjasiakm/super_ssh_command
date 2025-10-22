@@ -36,7 +36,7 @@ def parse_args():
     ap = argparse.ArgumentParser(
         description="Ogranicz logowanie SSH na zdalnych hostach wyłącznie do konta root."
     )
-    ap.add_argument("-f", "--file", default="hosts.csv" ,required=True, help="Ścieżka do pliku CSV: ip,username,password")
+    ap.add_argument("-f", "--file", default="hosts.csv" , help="Ścieżka do pliku CSV: ip,username,password")
     ap.add_argument("-d", "--destination", help="Destination IP")
     ap.add_argument("-c", "--command", help="Raw command")
     ap.add_argument("-u", "--user", help="User name")
