@@ -85,8 +85,9 @@ def run_cmd(client: paramiko.SSHClient, cmd: str, sudo: bool, password: str, tim
         err = stderr.read().decode("utf-8", "ignore")
         rc = stdout.channel.recv_exit_status()
     else:
+        shell=client.invoke_shell()
         for c in cmd.split(";"):
-            channel.send(c + "\n")
+            shell.send(c + "\n")
             print(f"Sent: {c}")
             time.sleep(1)
             while shell.recv_ready():
