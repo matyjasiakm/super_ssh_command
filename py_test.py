@@ -57,14 +57,14 @@ def connect_ssh(ip: str, username: str, password: str, port: int, timeout: int) 
     try:
         client.connect(
             ip, port=port, username=username, password=password,
-            allow_agent=False, look_for_keys=False, timeout=timeout, banner_timeout=timeout, auth_timeout=timeout
+            look_for_keys=False, timeout=timeout, banner_timeout=timeout, auth_timeout=timeout
         )
         return client, None
     except (paramiko.SSHException, socket.error, socket.timeout) as e:
         return None, f"Połączenie nieudane: {e}"
 
 
-def run_cmd(client: paramiko.SSHClient, cmd: str, sudo: bool, password: str, timeout: int = 30, interactive_mode: bool = false) -> Tuple[int, str, str]:
+def run_cmd(client: paramiko.SSHClient, cmd: str, sudo: bool, password: str, timeout: int = 30, interactive_mode: bool = False) -> Tuple[int, str, str]:
     """
     Uruchamia komendę; jeśli sudo=True, podaje hasło przez stdin.
     Zwraca (rc, stdout, stderr).
@@ -77,6 +77,7 @@ def run_cmd(client: paramiko.SSHClient, cmd: str, sudo: bool, password: str, tim
         full_cmd = f"sudo -S -p '' {cmd}" if sudo else cmd
         # get_pty=True aby sudo akceptowało hasło
         stdin, stdout, stderr = client.exec_command(full_cmd, get_pty=True, timeout=timeout)
+        time.sleep(0.2)
         if sudo:
             stdin.write(password + "\n")
             stdin.flush()
@@ -96,7 +97,7 @@ def run_cmd(client: paramiko.SSHClient, cmd: str, sudo: bool, password: str, tim
             while shell.recv_stderr_ready():
                 e = shell.recv_stderr(4096).decode("utf-8", errors="ignore")
                 err += e
-            # Give time for command to execute
+            rc = 0 if len(err) == 0 else 1 
     return rc, out, err
 
 
