@@ -8,7 +8,6 @@ import socket
 import paramiko
 import configparser
 import logging
-import time
 from typing import Tuple, Optional
 
 from parso.python.tree import Literal
@@ -37,7 +36,7 @@ def parse_args():
     ap = argparse.ArgumentParser(
         description="Ogranicz logowanie SSH na zdalnych hostach wyłącznie do konta root."
     )
-    # ap.add_argument("-f", "--file", required=True, help="Ścieżka do pliku CSV: ip,username,password")
+    ap.add_argument("-f", "--file", default="hosts.csv" ,required=True, help="Ścieżka do pliku CSV: ip,username,password")
     ap.add_argument("-d", "--destination", help="Destination IP")
     ap.add_argument("-c", "--command", help="Raw command")
     ap.add_argument("-u", "--user", help="User name")
@@ -58,15 +57,14 @@ def connect_ssh(ip: str, username: str, password: str, port: int, timeout: int) 
     try:
         client.connect(
             ip, port=port, username=username, password=password,
-             look_for_keys=False, timeout=timeout, banner_timeout=timeout, auth_timeout=timeout
+            allow_agent=False, look_for_keys=False, timeout=timeout, banner_timeout=timeout, auth_timeout=timeout
         )
-        #allow_agent=False
         return client, None
     except (paramiko.SSHException, socket.error, socket.timeout) as e:
         return None, f"Połączenie nieudane: {e}"
 
 
-def run_cmd(client: paramiko.SSHClient, cmd: str, sudo: bool, password: str, timeout: int = 30, interactive_mode: bool = False) -> Tuple[int, str, str]:
+def run_cmd(client: paramiko.SSHClient, cmd: str, sudo: bool, password: str, timeout: int = 30, interactive_mode: bool = false) -> Tuple[int, str, str]:
     """
     Uruchamia komendę; jeśli sudo=True, podaje hasło przez stdin.
     Zwraca (rc, stdout, stderr).
@@ -78,8 +76,7 @@ def run_cmd(client: paramiko.SSHClient, cmd: str, sudo: bool, password: str, tim
     if not interactive_mode:
         full_cmd = f"sudo -S -p '' {cmd}" if sudo else cmd
         # get_pty=True aby sudo akceptowało hasło
-        stdin, stdout, stderr = client.exec_command(full_cmd, timeout=timeout)
-        time.sleep(0.2)
+        stdin, stdout, stderr = client.exec_command(full_cmd, get_pty=True, timeout=timeout)
         if sudo:
             stdin.write(password + "\n")
             stdin.flush()
@@ -87,10 +84,10 @@ def run_cmd(client: paramiko.SSHClient, cmd: str, sudo: bool, password: str, tim
         err = stderr.read().decode("utf-8", "ignore")
         rc = stdout.channel.recv_exit_status()
     else:
-        shell = client.invoke_shell()
-        
+        channel = client.invoke_shell()
+        print(f"Connected to {host}. Sending commands...\n")
         for c in cmd.split(";"):
-            shell.send(c + "\n")
+            channel.send(c + "\n")
             print(f"Sent: {c}")
             time.sleep(1)
             while shell.recv_ready():
@@ -100,7 +97,6 @@ def run_cmd(client: paramiko.SSHClient, cmd: str, sudo: bool, password: str, tim
                 e = shell.recv_stderr(4096).decode("utf-8", errors="ignore")
                 err += e
             # Give time for command to execute
-            rc = 0 if len(err) == 0 else 1
     return rc, out, err
 
 
@@ -143,13 +139,33 @@ def main():
     logger.info("ESSSA")
 
     args = parse_args()
-    hosts = load_hosts('hosts.csv')  # load_hosts(args.file)
-    if not hosts or args.destination is not None:
-        hosts = []
+
+    hosts=[]
+    hosts_file=[]
+
+    try:
+    hosts_file = load_hosts(args.file)  # load_hosts(args.file)
+    except Exception as e:
+    print(f"⚠️ Brak pliku hosts.\n{out.strip() if is_verbose else ''}")
+    if args.destination is None:
+        return
+
+    if args.destination is not None:
         # print("Brak hostów do przetworzenia (sprawdź plik CSV).", file=sys.stderr)
         for ip in args.destination.split(','):
+            if args.user is not None:
+                for t in hosts_file:
+                    if ip in t and args.user:
+                        hosts.append(t)
+            else:
+                for t in hosts_file:
+                    if ip in t:
+                        hosts.append(t)
             hosts.append((ip, args.user, args.password))
         # sys.exit(2)
+    else:
+        hosts=hosts_file
+
     cmd_block = args.command if args.command else prepare_commands()
 
     summary = []
